@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dominating Set Explorer</title>
+<style>
+:root{--bg:#0e1520;--panel:#162435;--line:#304863;--text:#eaf1fb;--muted:#a8b9d0;--u:#3b4d66;--d:#4c79c6;--s:#ef9a2f;--c:#e9dc6c;--ok:#63cf7c;--bad:#ff7171}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1200px 700px at 80% -25%,#223651,#0e1520 55%);color:var(--text);font-family:"Trebuchet MS",Segoe UI,sans-serif}
+.page{max-width:1380px;margin:0 auto;padding:14px;display:grid;grid-template-columns:360px 1fr;gap:12px}
+.panel{background:linear-gradient(160deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid #2a3b53;border-radius:12px;padding:12px}
+.controls{position:sticky;top:8px;max-height:calc(100vh - 16px);overflow:auto}
+h1,h2,h3,h4,p{margin:0}h1{font-family:Georgia,serif;font-size:28px}h2{font-size:22px;margin-bottom:6px}h3{font-size:15px;margin-bottom:7px}
+.sub{margin:6px 0 10px;color:var(--muted);font-size:13px}
+.group{border:1px solid #2a3b53;background:#121d2c;border-radius:10px;padding:9px;margin-bottom:10px}
+label{display:block;color:var(--muted);font-size:12px;margin:5px 0 4px}
+select,textarea,input[type=range],button{width:100%;background:#101a28;color:var(--text);border:1px solid #334862;border-radius:8px;padding:7px;font-size:13px}
+textarea{min-height:92px;resize:vertical;font-family:Consolas,monospace}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}.row3{grid-template-columns:1fr 1fr 1fr}
+button{cursor:pointer}button:hover{filter:brightness(1.12)}.primary{background:linear-gradient(145deg,#f2aa2d,#d78810);border-color:#d18b1d;color:#21190d;font-weight:700}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.chip{font-size:12px;border:1px solid #39506e;border-radius:999px;padding:4px 8px;color:var(--muted)}
+.status{display:flex;gap:8px;align-items:center;font-size:12px;margin-top:8px}.pill{padding:3px 8px;border-radius:999px;font-weight:700;background:#3b4d6b}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px}.li{display:flex;align-items:center;gap:6px}.dot{width:11px;height:11px;border-radius:999px;display:inline-block}
+.main{display:grid;gap:12px}.vizgrid{display:grid;grid-template-columns:1fr;gap:9px}.vizgrid.compare{grid-template-columns:1fr 1fr}
+.card{background:#101a28;border:1px solid #2a3b53;border-radius:10px;padding:9px;display:grid;grid-template-rows:auto 1fr auto auto;gap:8px;min-height:420px}
+svg.graph{width:100%;height:250px;background:radial-gradient(circle at 15% 15%,#1f314c,#121d2c 62%);border:1px solid #2d4260;border-radius:9px}
+.edge{stroke:#607496;stroke-width:2;opacity:.86}.node{fill:var(--u);stroke:#94abd0;stroke-width:2;transition:fill .28s ease,stroke .28s ease}.node.d{fill:var(--d)}.node.s{fill:var(--s);stroke:#ffe0aa}.node.c{stroke:var(--c);stroke-width:4}
+.code{list-style:none;margin:0;padding:7px 9px;border-radius:8px;background:#19273c;border:1px solid #2f4667;font-family:Consolas,monospace;font-size:12px}.code li{padding:2px 4px;border-radius:4px}.code li.a{background:rgba(64,198,200,.24);outline:1px solid rgba(64,198,200,.45)}
+.exp{font-size:12px;color:var(--muted);background:#132033;border:1px solid #2c405e;border-radius:8px;padding:7px;min-height:46px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:8px}.s{background:#101a28;border:1px solid #2a3b53;border-radius:9px;padding:8px}.k{font-size:12px;color:var(--muted)}.v{font-size:19px;font-weight:700}
+.chart{width:100%;height:210px;background:#101a28;border:1px solid #2a3b53;border-radius:9px}
+.proof{display:grid;grid-template-columns:1fr 1fr;gap:9px}.pc{background:#101a28;border:1px solid #2a3b53;border-radius:9px;padding:9px;font-size:13px;color:#d8e7fb;line-height:1.42}.pc ul{margin:0;padding-left:18px}
+.overview details{background:#101a28;border:1px solid #2a3b53;border-radius:9px;padding:8px;margin-bottom:8px}.overview summary{cursor:pointer;font-weight:700}.overview p,.overview li{color:#c7d6eb;font-size:13px;line-height:1.4}
+.tip{font-size:12px;color:var(--muted)}
+.rsvg{width:100%;height:220px;background:radial-gradient(circle at 15% 15%,#1f314c,#121d2c 62%);border:1px solid #2d4260;border-radius:9px}
+.rtext{font-size:13px;color:#d7e6fb;background:#101a28;border:1px solid #2a3b53;border-radius:9px;padding:9px;margin-top:8px;line-height:1.4}
+@media (max-width:1100px){.page{grid-template-columns:1fr}.controls{position:static;max-height:none}.proof{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+  <aside class="panel controls">
+    <h1>Dominating Set Explorer</h1>
+    <p class="sub">BCS 309 Final Project | NP-Completeness + Exact vs Greedy</p>
+
+    <section class="group"><h3>Mode</h3>
+      <label for="mode">Algorithm mode</label>
+      <select id="mode"><option value="greedy">Greedy Heuristic</option><option value="brute">Brute Force (Exact)</option><option value="compare">Comparison (Side-by-side)</option></select>
+    </section>
+
+    <section class="group"><h3>Graph Input</h3>
+      <div class="row"><button id="pGrid">Preset: Grid</button><button id="pRnd">Preset: Random</button></div>
+      <div class="row"><button id="pScale">Preset: Scale-Free</button><button id="shuffle">Shuffle Layout</button></div>
+      <label for="custom">Custom adjacency list (e.g. 0:1,2)</label>
+      <textarea id="custom">0:1,2
+1:0,2,3
+2:0,1,4
+3:1,4,5
+4:2,3,5
+5:3,4</textarea>
+      <button id="loadCustom">Load Custom Graph</button>
+      <p class="tip">For brute-force visualization, keep n <= 13.</p>
+    </section>
+
+    <section class="group"><h3>Animation Controls</h3>
+      <label for="speed">Speed (ms/step): <span id="speedL">700</span></label><input id="speed" type="range" min="120" max="1500" step="20" value="700" />
+      <div class="row"><button id="build" class="primary">Build Steps</button><button id="step">Step</button></div>
+      <div class="row row3"><button id="play">Play</button><button id="pause">Pause</button><button id="reset">Reset</button></div>
+      <div class="chips"><span class="chip">Step <b id="stepN">0</b></span><span class="chip">Greedy <b id="gCount">0</b></span><span class="chip">Brute <b id="bCount">0</b></span></div>
+      <div class="status"><span>Status</span><span id="status" class="pill">Ready</span></div>
+    </section>
+
+    <section class="group"><h3>Legend</h3>
+      <div class="legend">
+        <div class="li"><span class="dot" style="background:var(--u)"></span>Undominated</div><div class="li"><span class="dot" style="background:var(--d)"></span>Dominated</div>
+        <div class="li"><span class="dot" style="background:var(--s)"></span>In D</div><div class="li"><span class="dot" style="background:var(--c)"></span>Candidate</div>
+      </div>
+    </section>
+
+    <section class="group overview"><h3>Educational Content</h3>
+      <details open><summary>Overview</summary><p>Dominating Set asks whether there exists D with |D|<=k such that every vertex is in D or adjacent to a vertex in D.</p></details>
+      <details><summary>Worked Example</summary><p>On path 0-1-2-3-4, choosing D={1,3} dominates all vertices.</p></details>
+      <details><summary>Key Concepts</summary><ul><li>Exact brute-force is exponential.</li><li>Greedy picks the vertex with maximum new coverage.</li><li>Greedy is linked to Set Cover with O(ln n) approximation analysis.</li></ul></details>
+    </section>
+  </aside>
+
+  <main class="main">
+    <section class="panel"><h2>Interactive Visualization</h2><p class="sub">Build Steps first, then use Step/Play/Pause/Reset.</p>
+      <div id="vizgrid" class="vizgrid">
+        <article class="card"><h3 id="tA">Greedy Heuristic</h3><svg id="svgA" class="graph" viewBox="0 0 640 250"></svg><div id="eA" class="exp">Build steps to begin.</div><ol id="cA" class="code"></ol></article>
+        <article class="card" id="cardB" style="display:none;"><h3 id="tB">Brute Force Exact</h3><svg id="svgB" class="graph" viewBox="0 0 640 250"></svg><div id="eB" class="exp">Comparison mode only.</div><ol id="cB" class="code"></ol></article>
+      </div>
+    </section>
+
+    <section class="panel"><h2>Live Statistics + Growth Curve</h2>
+      <div class="stats"><div class="s"><div class="k">Greedy operations</div><div id="sgOps" class="v">0</div></div><div class="s"><div class="k">Brute operations</div><div id="sbOps" class="v">0</div></div><div class="s"><div class="k">Greedy |D|</div><div id="sgSize" class="v">0</div></div><div class="s"><div class="k">Exact |D*|</div><div id="sbSize" class="v">0</div></div></div>
+      <p class="sub" style="margin-top:8px">Growth trend chart: brute-force ~ 2^n, practical greedy ~ n^2.</p>
+      <svg id="chart" class="chart" viewBox="0 0 900 210"></svg>
+    </section>
+
+    <section class="panel"><h2>NP-Completeness Section</h2>
+      <div class="proof">
+        <article class="pc"><h4>In NP</h4><ul><li>Certificate: subset D, |D|<=k.</li><li>Verifier checks each vertex is in D or has neighbor in D.</li><li>Polynomial verification: O(n+m) with adjacency list.</li></ul></article>
+        <article class="pc"><h4>Reduction from Vertex Cover</h4><ul><li>Given VC instance (G,k), create G'.</li><li>For each edge (u,v), add gadget vertex w_uv connected only to u and v.</li><li>Claim: VC yes-instance iff DS yes-instance with same k.</li><li>Construction is polynomial in |V|+|E|.</li></ul></article>
+      </div>
+      <article class="pc" style="margin-top:9px"><h4>Correctness (Forward + Backward)</h4><ul><li>Forward: VC set C dominates all original vertices and each gadget w_uv through u or v in C.</li><li>Backward: Any gadget in D can be replaced by endpoint without increasing size; then every edge must have at least one endpoint in resulting set, so it is a vertex cover.</li><li>Hence Dominating Set is NP-complete.</li></ul></article>
+      <svg viewBox="0 0 860 170" style="width:100%;height:170px;margin-top:9px;background:#101a28;border:1px solid #2a3b53;border-radius:9px">
+        <text x="18" y="24" fill="#e7f1ff" font-size="14" font-family="Trebuchet MS">Reduction gadget for edge (u,v)</text>
+        <circle cx="140" cy="90" r="19" fill="#ef9a2f" stroke="#ffe1b0" stroke-width="2"></circle><text x="136" y="95" fill="#17210f" font-size="12">u</text>
+        <circle cx="260" cy="90" r="19" fill="#ef9a2f" stroke="#ffe1b0" stroke-width="2"></circle><text x="256" y="95" fill="#17210f" font-size="12">v</text>
+        <circle cx="200" cy="42" r="17" fill="#4c79c6" stroke="#c0d5fb" stroke-width="2"></circle><text x="184" y="46" fill="#fff" font-size="11">w_uv</text>
+        <line x1="156" y1="73" x2="186" y2="53" stroke="#7ea0d0" stroke-width="3"></line><line x1="244" y1="73" x2="214" y2="53" stroke="#7ea0d0" stroke-width="3"></line>
+        <text x="330" y="54" fill="#d9e7ff" font-size="13">If neither u nor v is selected, w_uv is undominated.</text>
+        <text x="330" y="82" fill="#d9e7ff" font-size="13">So each edge forces at least one endpoint into solution.</text>
+        <text x="330" y="111" fill="#9adcad" font-size="13">This simulates Vertex Cover constraints in Dominating Set.</text>
+      </svg>
+    </section>
+
+    <section class="panel"><h2>Reduction Visualizer: G to G'</h2><p class="sub">Use these steps in your presentation to show construction and correctness directions visually.</p>
+      <div class="row row3">
+        <button id="rvBuild" class="primary">1) Build G'</button>
+        <button id="rvForward">2) Forward</button>
+        <button id="rvBackward">3) Backward</button>
+      </div>
+      <div class="row" style="margin-top:8px"><button id="rvReset">Reset View</button><div></div></div>
+      <div class="proof" style="margin-top:8px">
+        <article class="pc"><h4>Original Graph G</h4><svg id="rvG" class="rsvg" viewBox="0 0 620 220"></svg></article>
+        <article class="pc"><h4>Constructed Graph G'</h4><svg id="rvGp" class="rsvg" viewBox="0 0 620 220"></svg></article>
+      </div>
+      <div id="rvText" class="rtext">Click "1) Build G'" to start the transformation story.</div>
+    </section>
+  </main>
+</div>
+
+<script>
+"use strict";
+const GP=["1. D <- empty set","2. U <- all vertices","3. while U not empty:","4. choose v with max new domination","5. D <- D U {v}","6. remove dominated from U","7. return D"];
+const BP=["1. for size=0..n","2. generate subsets S of this size","3. if S dominates all vertices","4. return S (optimal)","5. otherwise continue"];
+
+const $=id=>document.getElementById(id);
+const E={mode:$("mode"),custom:$("custom"),loadCustom:$("loadCustom"),pGrid:$("pGrid"),pRnd:$("pRnd"),pScale:$("pScale"),shuffle:$("shuffle"),speed:$("speed"),speedL:$("speedL"),build:$("build"),step:$("step"),play:$("play"),pause:$("pause"),reset:$("reset"),stepN:$("stepN"),gCount:$("gCount"),bCount:$("bCount"),status:$("status"),vizgrid:$("vizgrid"),cardB:$("cardB"),tA:$("tA"),tB:$("tB"),svgA:$("svgA"),svgB:$("svgB"),eA:$("eA"),eB:$("eB"),cA:$("cA"),cB:$("cB"),sgOps:$("sgOps"),sbOps:$("sbOps"),sgSize:$("sgSize"),sbSize:$("sbSize"),chart:$("chart"),rvBuild:$("rvBuild"),rvForward:$("rvForward"),rvBackward:$("rvBackward"),rvReset:$("rvReset"),rvG:$("rvG"),rvGp:$("rvGp"),rvText:$("rvText")};
+
+const S={g:null,mode:"greedy",timer:null,step:0,greedy:{steps:[],ptr:0,ops:0,solution:[]},brute:{steps:[],ptr:0,ops:0,solution:[]}};
+function status(t,c){E.status.textContent=t;E.status.className="pill";if(c)E.status.style.background=c}
+function make(n){return{n,adj:Array.from({length:n},()=>new Set()),pos:Array.from({length:n},()=>({x:0,y:0}))}}
+function edge(g,u,v){if(u===v||u<0||v<0||u>=g.n||v>=g.n)return;g.adj[u].add(v);g.adj[v].add(u)}
+function clone(g){const h=make(g.n);for(let i=0;i<g.n;i++){h.adj[i]=new Set([...g.adj[i]]);h.pos[i]={x:g.pos[i].x,y:g.pos[i].y}}return h}
+function layout(g,w=640,h=250){const cx=w/2,cy=h/2,r=Math.min(w,h)*0.36;for(let i=0;i<g.n;i++){const t=2*Math.PI*i/g.n;g.pos[i]={x:cx+r*Math.cos(t),y:cy+r*Math.sin(t)}}}
+function shuffle(g){layout(g);for(let i=0;i<g.n;i++){g.pos[i].x+=Math.random()*30-15;g.pos[i].y+=Math.random()*20-10}}
+function grid(r,c){const g=make(r*c),id=(i,j)=>i*c+j;for(let i=0;i<r;i++)for(let j=0;j<c;j++){if(i+1<r)edge(g,id(i,j),id(i+1,j));if(j+1<c)edge(g,id(i,j),id(i,j+1))}layout(g);return g}
+function randomG(n,p=.28){const g=make(n);for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)if(Math.random()<p)edge(g,i,j);for(let i=0;i<n;i++)if(g.adj[i].size===0&&n>1)edge(g,i,(i+1)%n);layout(g);return g}
+function scaleFree(n){const g=make(n);if(n<=1){layout(g);return g}edge(g,0,1);if(n>2){edge(g,1,2);edge(g,0,2)}const bag=[0,1,1,2,0,2];for(let v=3;v<n;v++){const pick=new Set();while(pick.size<2)pick.add(bag[Math.floor(Math.random()*bag.length)]);pick.forEach(u=>{edge(g,u,v);bag.push(u,v)})}layout(g);return g}
+function parse(text){const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);const ids=[];for(const ln of lines){const u=Number(ln.split(":")[0]);if(Number.isFinite(u))ids.push(u)}const mx=Math.max(...ids);if(!Number.isFinite(mx)||mx<0)throw new Error("bad input");const g=make(mx+1);for(const ln of lines){const p=ln.split(":");if(p.length!==2)continue;const u=Number(p[0]);if(!Number.isFinite(u))continue;for(const t of p[1].split(",")){const v=Number(t.trim());if(Number.isFinite(v))edge(g,u,v)}}layout(g);return g}
+function dominated(g,arr){const sel=new Set(arr),d=Array(g.n).fill(false);for(let v=0;v<g.n;v++)if(sel.has(v)){d[v]=true;for(const nb of g.adj[v])d[nb]=true}return d}
+function greedy(g){const d=Array(g.n).fill(false),D=[],steps=[];let ops=0;steps.push({l:1,D:[],d:[...d],c:[],x:"Initialize D={}.",});steps.push({l:2,D:[],d:[...d],c:[],x:`Start with all ${g.n} vertices undominated.`});while(d.some(x=>!x)){steps.push({l:3,D:[...D],d:[...d],c:[],x:"Continue while undominated vertices exist."});let best=-1,gain=-1,cov=[];for(let v=0;v<g.n;v++){if(D.includes(v))continue;const cover=[v,...g.adj[v]];let g0=0;for(const z of cover){ops++;if(!d[z])g0++}if(g0>gain){gain=g0;best=v;cov=cover}}steps.push({l:4,D:[...D],d:[...d],c:[best],x:`Best vertex is ${best} with new gain=${gain}.`});D.push(best);for(const z of cov)d[z]=true;steps.push({l:5,D:[...D],d:[...d],c:[best],x:`Add ${best} to D.`});steps.push({l:6,D:[...D],d:[...d],c:[],x:`Remaining undominated: ${d.filter(z=>!z).length}.`})}steps.push({l:7,D:[...D],d:Array(g.n).fill(true),c:[],x:`Return D={${D.join(", ")}} (|D|=${D.length}).`});return{steps,ops,solution:D}}
+function comb(n,k){const out=[],cur=[];const rec=s=>{if(cur.length===k){out.push([...cur]);return}for(let i=s;i<=n-(k-cur.length);i++){cur.push(i);rec(i+1);cur.pop()}};rec(0);return out}
+function brute(g,max=250000){const steps=[];let ops=0,chk=0;for(let sz=0;sz<=g.n;sz++){steps.push({l:1,D:[],d:Array(g.n).fill(false),c:[],x:`Try subsets of size ${sz}.`});for(const sub of comb(g.n,sz)){chk++;ops++;const d=dominated(g,sub);steps.push({l:2,D:[],d:Array(g.n).fill(false),c:sub,x:`Subset S={${sub.join(", ")}}.`});steps.push({l:3,D:[],d:d,c:sub,x:`Dominated ${d.filter(Boolean).length}/${g.n}.`});if(d.every(Boolean)){steps.push({l:4,D:sub,d:d,c:[],x:`Found optimal D*={${sub.join(", ")}} at size ${sz}.`});return{steps,ops,solution:sub,truncated:false}}if(chk>=max){steps.push({l:5,D:[],d:Array(g.n).fill(false),c:[],x:"Trace truncated for smooth animation. Use smaller n for full exhaustive trace."});return{steps,ops,solution:[],truncated:true}}}}return{steps,ops,solution:[],truncated:false}}
+
+function code(box,lines,a){box.innerHTML=lines.map((t,i)=>`<li class="${i+1===a?"a":""}">${t}</li>`).join("")}
+function draw(svg,g,s){svg.innerHTML="";for(let u=0;u<g.n;u++)for(const v of g.adj[u])if(u<v){const ln=document.createElementNS("http://www.w3.org/2000/svg","line");ln.setAttribute("x1",g.pos[u].x.toFixed(2));ln.setAttribute("y1",g.pos[u].y.toFixed(2));ln.setAttribute("x2",g.pos[v].x.toFixed(2));ln.setAttribute("y2",g.pos[v].y.toFixed(2));ln.setAttribute("class","edge");svg.appendChild(ln)}
+const Ds=new Set(s.D||[]),Cs=new Set(s.c||[]),d=s.d||Array(g.n).fill(false);for(let v=0;v<g.n;v++){const c=document.createElementNS("http://www.w3.org/2000/svg","circle");c.setAttribute("cx",g.pos[v].x.toFixed(2));c.setAttribute("cy",g.pos[v].y.toFixed(2));c.setAttribute("r","14");let cls="node";if(d[v])cls+=" d";if(Ds.has(v))cls+=" s";if(Cs.has(v))cls+=" c";c.setAttribute("class",cls);svg.appendChild(c);const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",(g.pos[v].x-4).toFixed(2));t.setAttribute("y",(g.pos[v].y+4).toFixed(2));t.setAttribute("fill","#f4f9ff");t.setAttribute("font-size","11");t.setAttribute("font-family","Consolas");t.textContent=String(v);svg.appendChild(t)}}
+function cur(arr,p){if(!arr.length||p<=0)return null;return arr[Math.min(p-1,arr.length-1)]}
+function finished(){if(S.mode==="greedy")return S.greedy.ptr>=S.greedy.steps.length&&S.greedy.steps.length>0;if(S.mode==="brute")return S.brute.ptr>=S.brute.steps.length&&S.brute.steps.length>0;return S.greedy.ptr>=S.greedy.steps.length&&S.brute.ptr>=S.brute.steps.length&&S.greedy.steps.length>0&&S.brute.steps.length>0}
+function stats(){E.sgOps.textContent=String(S.greedy.ops||0);E.sbOps.textContent=String(S.brute.ops||0);E.sgSize.textContent=String((S.greedy.solution||[]).length);E.sbSize.textContent=String((S.brute.solution||[]).length)}
+function chart(){const svg=E.chart,w=900,h=210,L=60,B=30,T=18,R=20,pw=w-L-R,ph=h-T-B;const pts=[];for(let n=2;n<=16;n++)pts.push({n,b:2**n,g:n*n});const yM=pts[pts.length-1].b;const X=n=>L+((n-2)/14)*pw,Y=v=>T+(1-v/yM)*ph;const poly=(k,col)=>`<polyline fill="none" stroke="${col}" stroke-width="3" points="${pts.map(p=>`${X(p.n).toFixed(2)},${Y(p[k]).toFixed(2)}`).join(" ")}"/>`;const n0=S.g?S.g.n:6;svg.innerHTML=`<rect x="0" y="0" width="${w}" height="${h}" fill="#101a28"/><line x1="${L}" y1="${T}" x2="${L}" y2="${h-B}" stroke="#7387a7"/><line x1="${L}" y1="${h-B}" x2="${w-R}" y2="${h-B}" stroke="#7387a7"/>${poly("b","#ff8888")}${poly("g","#67d17e")}<circle cx="${X(n0)}" cy="${Y(2**n0)}" r="4" fill="#ff8888"/><circle cx="${X(n0)}" cy="${Y(n0*n0)}" r="4" fill="#67d17e"/><text x="${L}" y="13" fill="#d9e6f9" font-size="12">Operations trend</text><text x="${w-210}" y="18" fill="#ffb0b0" font-size="12">Brute ~ 2^n</text><text x="${w-210}" y="33" fill="#9be0aa" font-size="12">Greedy ~ n^2</text><text x="${w-210}" y="48" fill="#d9e6f9" font-size="12">Current n=${n0}</text>`;for(let n=2;n<=16;n+=2){const x=X(n);const tk=document.createElementNS("http://www.w3.org/2000/svg","line");tk.setAttribute("x1",x);tk.setAttribute("x2",x);tk.setAttribute("y1",h-B);tk.setAttribute("y2",h-B+5);tk.setAttribute("stroke","#7387a7");svg.appendChild(tk);const lb=document.createElementNS("http://www.w3.org/2000/svg","text");lb.setAttribute("x",x-6);lb.setAttribute("y",h-8);lb.setAttribute("fill","#b8c8de");lb.setAttribute("font-size","11");lb.textContent=String(n);svg.appendChild(lb)}}
+
+function show(){E.stepN.textContent=String(S.step);if(S.mode==="compare"){E.vizgrid.classList.add("compare");E.cardB.style.display="grid"}else{E.vizgrid.classList.remove("compare");E.cardB.style.display="none"}
+if(S.mode==="greedy"){const s=cur(S.greedy.steps,S.greedy.ptr)||{D:[],d:Array(S.g.n).fill(false),c:[],l:0,x:"Build steps to begin."};draw(E.svgA,S.g,s);code(E.cA,GP,s.l||0);E.eA.textContent=s.x;E.tA.textContent="Greedy Heuristic"}
+else if(S.mode==="brute"){const s=cur(S.brute.steps,S.brute.ptr)||{D:[],d:Array(S.g.n).fill(false),c:[],l:0,x:"Build steps to begin."};draw(E.svgA,S.g,s);code(E.cA,BP,s.l||0);E.eA.textContent=s.x;E.tA.textContent="Brute Force Exact"}
+else{const g=cur(S.greedy.steps,S.greedy.ptr)||{D:[],d:Array(S.g.n).fill(false),c:[],l:0,x:"Greedy trace not started."};const b=cur(S.brute.steps,S.brute.ptr)||{D:[],d:Array(S.g.n).fill(false),c:[],l:0,x:"Brute trace not started."};draw(E.svgA,S.g,g);draw(E.svgB,S.g,b);code(E.cA,GP,g.l||0);code(E.cB,BP,b.l||0);E.eA.textContent=g.x;E.eB.textContent=b.x;E.tA.textContent="Greedy Heuristic";E.tB.textContent="Brute Force Exact"}
+stats();chart()}
+
+function reset(){clearInterval(S.timer);S.timer=null;S.step=0;S.greedy={steps:[],ptr:0,ops:0,solution:[]};S.brute={steps:[],ptr:0,ops:0,solution:[]};E.gCount.textContent="0";E.bCount.textContent="0";status("Ready","#3b4d6b");show()}
+function build(){if(!S.g)return;clearInterval(S.timer);S.timer=null;S.step=0;S.mode=E.mode.value;if(S.mode==="greedy"){S.greedy={...greedy(clone(S.g)),ptr:0};S.brute={steps:[],ptr:0,ops:0,solution:[]}}
+else if(S.mode==="brute"){S.brute={...brute(clone(S.g),S.g.n>13?90000:250000),ptr:0};S.greedy={steps:[],ptr:0,ops:0,solution:[]}}
+else{S.greedy={...greedy(clone(S.g)),ptr:0};S.brute={...brute(clone(S.g),S.g.n>13?90000:250000),ptr:0}}
+E.gCount.textContent=String(S.greedy.steps.length);E.bCount.textContent=String(S.brute.steps.length);status("Steps Built","#3b4d6b");show()}
+function step(){if(S.mode==="greedy"&&S.greedy.ptr<S.greedy.steps.length)S.greedy.ptr++;if(S.mode==="brute"&&S.brute.ptr<S.brute.steps.length)S.brute.ptr++;if(S.mode==="compare"){if(S.greedy.ptr<S.greedy.steps.length)S.greedy.ptr++;if(S.brute.ptr<S.brute.steps.length)S.brute.ptr++;}S.step++;show();if(finished()){status("Finished","#1f6d3a");clearInterval(S.timer);S.timer=null}}
+function play(){if(S.timer)return;if((S.mode==="greedy"&&S.greedy.steps.length===0)||(S.mode==="brute"&&S.brute.steps.length===0)||(S.mode==="compare"&&(S.greedy.steps.length===0||S.brute.steps.length===0))){status("Build Steps First","#7f2d2d");return}status("Running","#1f6d74");S.timer=setInterval(()=>{if(finished()){clearInterval(S.timer);S.timer=null;status("Finished","#1f6d3a");return}step()},Number(E.speed.value))}
+function pause(){clearInterval(S.timer);S.timer=null;status("Paused","#6d6b1f")}
+function setGraph(g){S.g=g;reset();show()}
+
+const R={stage:"reset"};
+const RG={
+  n:4,
+  edges:[[0,1],[1,2],[2,3],[0,3]],
+  pos:[{x:110,y:110},{x:250,y:50},{x:390,y:110},{x:250,y:170}],
+  labels:["0","1","2","3"]
+};
+const RGP={
+  n:8,
+  edges:[[0,1],[1,2],[2,3],[0,3],[4,0],[4,1],[5,1],[5,2],[6,2],[6,3],[7,0],[7,3]],
+  pos:[{x:90,y:130},{x:200,y:55},{x:325,y:55},{x:435,y:130},{x:145,y:92},{x:262,y:26},{x:380,y:92},{x:262,y:180}],
+  labels:["0","1","2","3","w01","w12","w23","w03"]
+};
+function drawReduction(svg,g,s){
+  svg.innerHTML="";
+  for(const [u,v] of g.edges){
+    const ln=document.createElementNS("http://www.w3.org/2000/svg","line");
+    ln.setAttribute("x1",g.pos[u].x);ln.setAttribute("y1",g.pos[u].y);
+    ln.setAttribute("x2",g.pos[v].x);ln.setAttribute("y2",g.pos[v].y);
+    ln.setAttribute("class","edge");
+    svg.appendChild(ln);
+  }
+  const Ds=new Set(s.D||[]),Cs=new Set(s.c||[]),d=s.d||Array(g.n).fill(false);
+  for(let v=0;v<g.n;v++){
+    const node=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    node.setAttribute("cx",g.pos[v].x);node.setAttribute("cy",g.pos[v].y);node.setAttribute("r","14");
+    let cls="node";if(d[v])cls+=" d";if(Ds.has(v))cls+=" s";if(Cs.has(v))cls+=" c";node.setAttribute("class",cls);
+    svg.appendChild(node);
+    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+    t.setAttribute("x",g.pos[v].x-8);t.setAttribute("y",g.pos[v].y+4);t.setAttribute("fill","#f4f9ff");
+    t.setAttribute("font-size","10");t.setAttribute("font-family","Consolas");t.textContent=g.labels[v];
+    svg.appendChild(t);
+  }
+}
+function dominatedReduction(g,arr){
+  const sel=new Set(arr),d=Array(g.n).fill(false);
+  for(let v=0;v<g.n;v++){
+    if(!sel.has(v))continue;
+    d[v]=true;
+    for(const [a,b] of g.edges){
+      if(a===v)d[b]=true;
+      if(b===v)d[a]=true;
+    }
+  }
+  return d;
+}
+function renderReduction(){
+  if(R.stage==="build"){
+    const dGp=Array(RGP.n).fill(false);
+    E.rvText.textContent="Build step: start with G. For each edge (u,v), add a new vertex w_uv in G' connected only to u and v. Here w01, w12, w23, and w03 are the added gadget vertices.";
+    drawReduction(E.rvG,RG,{D:[],d:Array(RG.n).fill(false),c:[]});
+    drawReduction(E.rvGp,RGP,{D:[],d:dGp,c:[4,5,6,7]});
+    return;
+  }
+  if(R.stage==="forward"){
+    const vc=[1,3];
+    const dG=dominatedReduction(RG,vc);
+    const dGp=dominatedReduction(RGP,vc);
+    E.rvText.textContent="Forward direction: choose VC set C={1,3} in G. In G', the same set dominates all original vertices and each gadget w_uv, because every edge has at least one endpoint in C.";
+    drawReduction(E.rvG,RG,{D:vc,d:dG,c:[]});
+    drawReduction(E.rvGp,RGP,{D:vc,d:dGp,c:[]});
+    return;
+  }
+  if(R.stage==="backward"){
+    const dsPrime=[1,3,6];
+    const vcConv=[1,2,3];
+    const dGp=dominatedReduction(RGP,dsPrime);
+    const dG=dominatedReduction(RG,vcConv);
+    E.rvText.textContent="Backward direction: take dominating set D'={1,3,w23} in G'. Replace gadget w23 by endpoint 2, giving {1,2,3} in original vertices. This set is a vertex cover in G.";
+    drawReduction(E.rvG,RG,{D:vcConv,d:dG,c:[2]});
+    drawReduction(E.rvGp,RGP,{D:dsPrime,d:dGp,c:[6]});
+    return;
+  }
+  E.rvText.textContent="Click \"1) Build G'\" to start the transformation story.";
+  drawReduction(E.rvG,RG,{D:[],d:Array(RG.n).fill(false),c:[]});
+  drawReduction(E.rvGp,RGP,{D:[],d:Array(RGP.n).fill(false),c:[]});
+}
+
+E.mode.addEventListener("change",()=>{S.mode=E.mode.value;reset()});
+E.speed.addEventListener("input",()=>{E.speedL.textContent=E.speed.value;if(S.timer){clearInterval(S.timer);S.timer=null;play()}});
+E.build.addEventListener("click",build);E.step.addEventListener("click",()=>{if(!finished()){status("Running","#1f6d74");step()}});E.play.addEventListener("click",play);E.pause.addEventListener("click",pause);E.reset.addEventListener("click",()=>{reset();show()});
+E.pGrid.addEventListener("click",()=>setGraph(grid(3,3)));E.pRnd.addEventListener("click",()=>setGraph(randomG(10,.28)));E.pScale.addEventListener("click",()=>setGraph(scaleFree(11)));E.shuffle.addEventListener("click",()=>{const h=clone(S.g);shuffle(h);setGraph(h)});
+E.loadCustom.addEventListener("click",()=>{try{setGraph(parse(E.custom.value));status("Custom Loaded","#3b4d6b")}catch(_){status("Custom Parse Error","#7f2d2d")}});
+E.rvBuild.addEventListener("click",()=>{R.stage="build";renderReduction()});
+E.rvForward.addEventListener("click",()=>{R.stage="forward";renderReduction()});
+E.rvBackward.addEventListener("click",()=>{R.stage="backward";renderReduction()});
+E.rvReset.addEventListener("click",()=>{R.stage="reset";renderReduction()});
+
+S.g=grid(3,3);reset();code(E.cA,GP,0);code(E.cB,BP,0);draw(E.svgA,S.g,{D:[],d:Array(S.g.n).fill(false),c:[]});draw(E.svgB,S.g,{D:[],d:Array(S.g.n).fill(false),c:[]});chart();renderReduction();
+</script>
+</body>
+</html>
